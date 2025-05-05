@@ -1,0 +1,34 @@
+# Base com Spark
+FROM bitnami/spark:3.4.1
+
+# ROOT para instalações
+USER root
+
+# Instala Java e dependências para acessar S3A (MinIO)
+RUN apt-get update --fix-missing && \
+  apt-get install -y wget openjdk-11-jdk && \
+  rm -rf /var/lib/apt/lists/*
+
+
+# Variáveis de ambiente para o Java
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV PATH=$JAVA_HOME/bin:$PATH
+
+# Diretório de trabalho padrão do Spark
+WORKDIR /opt/spark/work-dir
+
+# Copia configurações do Spark
+COPY ./configs/spark-defaults.conf /opt/bitnami/spark/conf/
+
+# Copia os scripts do pipeline
+COPY ./scripts /opt/spark/scripts
+
+# Bibliotecas necessárias para S3A
+RUN wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.5/hadoop-aws-3.3.5.jar -P /opt/bitnami/spark/jars/ && \
+  wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.426/aws-java-sdk-bundle-1.12.426.jar -P /opt/bitnami/spark/jars/
+
+# Permissões
+RUN chmod -R 755 /opt/spark
+
+# Usuário não-root padrão da imagem Bitnami
+USER 1001

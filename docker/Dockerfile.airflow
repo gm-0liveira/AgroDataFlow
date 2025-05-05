@@ -1,0 +1,30 @@
+FROM apache/airflow:2.9.1-python3.10
+
+# Elevar permissão temporariamente para instalar dependências
+USER root
+
+# Instalar Java (necessário para o Spark)
+RUN apt-get update && \
+  apt-get install -y default-jdk netcat-openbsd && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
+
+# Voltar para o usuário airflow e instalar dependências Python
+USER airflow
+
+# Instalar pacotes necessários com versões compatíveis
+RUN pip install --upgrade pip && \
+  pip install --no-cache-dir \
+  boto3 \
+  apache-airflow-providers-amazon \
+  pyspark==3.5.0 \
+  apache-airflow-providers-apache-spark==5.2.1
+
+# Copiar o script de entrada
+USER root
+COPY ./airflow/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Voltar para o usuário padrão do Airflow
+USER airflow
